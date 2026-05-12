@@ -803,10 +803,10 @@ drawWheel('w7', 7, [COLORS.w1, COLORS.w2, COLORS.w1, COLORS.w2, COLORS.w1, COLOR
 // ═══════════════════════════════════
 // Graph: A-B, A-C, A-D, B-C, B-E, C-E, C-F, D-F
 const wpNodes = [
-  { id:'A', neighbors:['B','C','D'], color: null },
+  { id:'A', neighbors:['B','C'], color: null },
   { id:'B', neighbors:['A','C','E'], color: null },
-  { id:'C', neighbors:['A','B','E','F'], color: null },
-  { id:'D', neighbors:['A','F'], color: null },
+  { id:'C', neighbors:['A','B','D','E','F'], color: null },
+  { id:'D', neighbors:['C','F'], color: null },
   { id:'E', neighbors:['B','C'], color: null },
   { id:'F', neighbors:['C','D'], color: null },
 ];
@@ -817,14 +817,15 @@ const wpSorted = [...wpNodes].sort((a,b) => b.neighbors.length - a.neighbors.len
 
 // Positions for the 6-node graph
 const wpPos = {
-  A: {x:110, y:80}, B: {x:220, y:60}, C: {x:190, y:170},
-  D: {x:55,  y:175}, E: {x:285, y:175}, F: {x:120, y:245}
+  A: {x:90,  y:70},  B: {x:240, y:55},
+  C: {x:210, y:185}, D: {x:60,  y:210},
+  E: {x:290, y:195}, F: {x:140, y:265}
 };
 
 const wpEdges = [
-  ['A','B'],['A','C'],['A','D'],
+  ['A','B'],['A','C'],
   ['B','C'],['B','E'],
-  ['C','E'],['C','F'],
+  ['C','D'],['C','E'],['C','F'],
   ['D','F']
 ];
 
@@ -834,39 +835,67 @@ const wpColorAssignments = []; // {id, color}
 const wpSteps = [
   // Step 0 = initial (done in drawWelch)
   {
-    msg: "Urutkan berdasarkan derajat: <strong>C(4) → A(3) → B(3) → D(2) → E(2) → F(2)</strong>",
+    msg: "Hitung derajat dulu: C terhubung ke A,B,D,E,F → d=5. B terhubung ke A,C,E → d=3. Urutkan: <strong>C(5) → B(3) → A(2) → D(2) → E(2) → F(2)</strong>",
     highlight: null, assignColor: null
   },
   {
-    msg: "Simpul <strong>C</strong> (derajat 4, terbesar) → diberi <strong style='color:#06B6D4'>Warna 1 (Biru)</strong>",
+    msg: "Simpul <strong>C</strong> (derajat 5, terbesar) → diberi <strong style='color:#06B6D4'>Warna 1 (Biru)</strong>",
     highlight: 'C', assignColor: {id:'C', color: PALETTE[0]}
   },
   {
-    msg: "Simpul <strong>A</strong> (derajat 3) — tidak bertetangga dengan C? <strong>TIDAK</strong> (A-C ada sisi) → Warna 2",
+    msg: "Lanjut Warna 1: cek <strong>B</strong> — bertetangga C? <strong>IYA</strong> (ada garis B-C) → B tidak bisa Warna 1, skip",
+    highlight: 'B', assignColor: null
+  },
+  {
+    msg: "Lanjut Warna 1: cek <strong>A</strong> — bertetangga C? <strong>IYA</strong> (ada garis A-C) → A tidak bisa Warna 1, skip",
     highlight: 'A', assignColor: null
   },
   {
-    msg: "Simpul <strong>A</strong> → diberi <strong style='color:#F97316'>Warna 2 (Jingga)</strong>. Cek sisa: B bertetangga A dan C → skip",
-    highlight: 'A', assignColor: {id:'A', color: PALETTE[1]}
+    msg: "Lanjut Warna 1: cek <strong>D</strong> — bertetangga C? <strong>IYA</strong> (ada garis D-C) → D tidak bisa Warna 1, skip",
+    highlight: 'D', assignColor: null
   },
   {
-    msg: "Lanjutkan Warna 2: <strong>D</strong> tidak bertetangga A → <strong style='color:#F97316'>Warna 2 (Jingga)</strong>",
+    msg: "Lanjut Warna 1: cek <strong>E</strong> — bertetangga C? <strong>IYA</strong> (ada garis E-C) → E tidak bisa Warna 1, skip",
+    highlight: 'E', assignColor: null
+  },
+  {
+    msg: "Lanjut Warna 1: cek <strong>F</strong> — bertetangga C? <strong>IYA</strong> (ada garis F-C) → F tidak bisa Warna 1, skip. Warna 1 selesai, hanya C.",
+    highlight: 'F', assignColor: null
+  },
+  {
+    msg: "Mulai <strong>Warna 2</strong>. Ambil yang belum berwarna, mulai dari <strong>B</strong> (derajat 3) → diberi <strong style='color:#F97316'>Warna 2 (Jingga)</strong>",
+    highlight: 'B', assignColor: {id:'B', color: PALETTE[1]}
+  },
+  {
+    msg: "Lanjut Warna 2: cek <strong>A</strong> — bertetangga B? <strong>IYA</strong> (ada garis A-B) → skip. Bertetangga C? <strong>IYA</strong> → skip.",
+    highlight: 'A', assignColor: null
+  },
+  {
+    msg: "Lanjut Warna 2: cek <strong>D</strong> — bertetangga B? <strong>TIDAK</strong>. Bertetangga C? Sudah Biru bukan Jingga, tidak konflik → <strong style='color:#F97316'>Warna 2 (Jingga)</strong>",
     highlight: 'D', assignColor: {id:'D', color: PALETTE[1]}
   },
   {
-    msg: "Lanjutkan Warna 2: <strong>E</strong> tidak bertetangga A atau D → <strong style='color:#F97316'>Warna 2 (Jingga)</strong>",
-    highlight: 'E', assignColor: {id:'E', color: PALETTE[1]}
+    msg: "Lanjut Warna 2: cek <strong>E</strong> — bertetangga B? <strong>IYA</strong> (ada garis E-B) → skip",
+    highlight: 'E', assignColor: null
   },
   {
-    msg: "Sisa: <strong>B</strong> dan <strong>F</strong> belum berwarna. Mulai Warna 3. <strong>B</strong> → <strong style='color:#EF4444'>Warna 3 (Merah)</strong>",
-    highlight: 'B', assignColor: {id:'B', color: PALETTE[2]}
+    msg: "Lanjut Warna 2: cek <strong>F</strong> — bertetangga B? <strong>TIDAK</strong>. Bertetangga D? D Jingga — ada garis F-D! → skip. F tidak bisa Warna 2.",
+    highlight: 'F', assignColor: null
   },
   {
-    msg: "Lanjutkan Warna 3: <strong>F</strong> — bertetangga B? <strong>TIDAK</strong> → <strong style='color:#EF4444'>Warna 3 (Merah)</strong>",
+    msg: "Mulai <strong>Warna 3</strong>. Sisa yang belum berwarna: A, E, F. Ambil <strong>A</strong> (derajat 2) → diberi <strong style='color:#EF4444'>Warna 3 (Merah)</strong>",
+    highlight: 'A', assignColor: {id:'A', color: PALETTE[2]}
+  },
+  {
+    msg: "Lanjut Warna 3: cek <strong>E</strong> — bertetangga A? <strong>TIDAK</strong>. Bertetangga simpul Merah lain? Tidak ada → <strong style='color:#EF4444'>Warna 3 (Merah)</strong>",
+    highlight: 'E', assignColor: {id:'E', color: PALETTE[2]}
+  },
+  {
+    msg: "Lanjut Warna 3: cek <strong>F</strong> — bertetangga A? <strong>TIDAK</strong>. Bertetangga E? <strong>TIDAK</strong> → <strong style='color:#EF4444'>Warna 3 (Merah)</strong>",
     highlight: 'F', assignColor: {id:'F', color: PALETTE[2]}
   },
   {
-    msg: "✅ Selesai! Semua simpul terwarnai. <strong>χ(G) ≤ 3 warna</strong> — Welch-Powell berhasil.",
+    msg: "✅ Selesai! Semua simpul terwarnai. C=Biru, B=Jingga, D=Jingga, A=Merah, E=Merah, F=Merah. <strong>χ(G) = 3 warna</strong> — Welch-Powell berhasil!",
     highlight: null, assignColor: null
   }
 ];
